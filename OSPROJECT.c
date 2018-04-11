@@ -121,9 +121,10 @@ static void*cat(void *arg)
 }
 
 /*
- * Mice wait for a FoodBowl to become free and cats go away. While eating,
- * they have to check that no cat is coming. Hence, a simple sleep()
- * cannot be used.
+   According to Problem:
+   Mice wait for a FoodBowl to become free and cats go away. While eating,
+   they have to check that no cat is coming. Hence, a simple sleep()
+   cannot be used.
  */
 
 static void*mouse(void *arg)
