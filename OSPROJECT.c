@@ -1,12 +1,12 @@
 #include <stdio.h>
-#include <assert.h>
+#include <assert.h>              //    for error handling
 #include<string.h>
-#include <time.h>
+#include <sys/time.h>			//for getting system_time
 #include <pthread.h>
 
 int NumCats,NumMice,Numbowls,cats_eats,mouse_eats;
 
-#define NumBowls  4         /* number of Bowls */
+#define NumBowls  2              /* number of Bowls */
 
 const int cat_wait=10;           //global constant declaration of waiting time of cat to eat 
 const int cat_eat=4;
@@ -33,8 +33,6 @@ typedef struct FoodBowl
 
 int NumCats,NumMice;
 
-static const char *progname = "CAT AND MICE SYNCHRONIZATION PROBLEM";
-
 static void Display(const char *name, pthread_t pet, const char *what,FoodBowl_t *FoodBowl, int my_FoodBowl)
 {
     int i;
@@ -42,23 +40,24 @@ static void Display(const char *name, pthread_t pet, const char *what,FoodBowl_t
     for (i = 0; i < NumBowls; i++) {
         if (i) 
 	     printf(":");
-        switch (FoodBowl->status[i]) {
-        case none_eating:
-            printf("-");
-            break;
-        case cat_eating:
-            printf("cat");
-            break;
-        case mouse_eating:
-            printf("mice");
-            break;
+	    
+        switch (FoodBowl->status[i]) // checking the bowls status  occupied/vaccant (0/1)
+	{
+          case none_eating:  printf("-");
+            		     break;
+       
+	  case cat_eating:   printf("cat");
+            		     break;
+        
+	  case mouse_eating: printf("mice");
+           		     break;
         }
     }
     printf("]  %s (id %x) %s eating from FoodBowl %d\n", name, pet, what, my_FoodBowl);
 }
 
 /*
-   According to question 
+   According to Problem
    Cats wait for a Bowl to become free and when coming to the Bowl,
    they wait for the mice to run away from the Bowl (they are nice
    cats and want to eat FoodBowl from Bowl rather than mice). Eating is simulated
@@ -95,7 +94,7 @@ static void*cat(void *arg)
         for (i = 0; i < NumBowls && FoodBowl->status[i] != none_eating; i++) ;
          my_FoodBowl = i;
         
-		assert(FoodBowl->status[my_FoodBowl] == none_eating);
+	assert(FoodBowl->status[my_FoodBowl] == none_eating);
         FoodBowl->status[my_FoodBowl] = cat_eating;
         Display("cat", pthread_self(), "started", FoodBowl, my_FoodBowl);
         pthread_mutex_unlock(&FoodBowl->mutex);
@@ -123,8 +122,7 @@ static void*cat(void *arg)
 /*
    According to Problem:
    Mice wait for a FoodBowl to become free and cats go away. While eating,
-   they have to check that no cat is coming. Hence, a simple sleep()
-   cannot be used.
+   they have to check that no cat is coming. 
  */
 
 static void*mouse(void *arg)
@@ -223,7 +221,7 @@ int main(int argc, char *argv[])
     pthread_cond_init(&FoodBowl->cat_cv, NULL);
     
      printf("\n !!!Cat And Mice Synchronization for  Eating from Bowls!!!\n\n");
-     printf("[B1,B2,B3,B4] BOWLS OCCUPIED BY ");
+     printf("[B1,B2] BOWLS OCCUPIED BY ");
     
     for (i = 0; i < NumCats; i++) {
         err = pthread_create(&cats[i], NULL, cat, FoodBowl);
