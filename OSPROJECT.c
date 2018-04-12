@@ -4,7 +4,7 @@
 #include <sys/time.h>			//for getting system_time
 #include <pthread.h>
 
-int NumCats,NumMice,Numbowls,cats_eats,mouse_eats;
+int NumCats,NumMice,Numbowls,cats_eats,mouse_eats;  //   global declaration
 
 #define NumBowls  2              /* number of Bowls */
 
