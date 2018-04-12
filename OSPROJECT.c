@@ -1,12 +1,12 @@
 #include <stdio.h>
-#include <assert.h>              //    for error handling
+#include <assert.h>
 #include<string.h>
-#include <sys/time.h>			//for getting system_time
+#include <sys/time.h>
 #include <pthread.h>
 
-int NumCats,NumMice,Numbowls,cats_eats,mouse_eats;  //   global declaration
+int NumCats,NumMice,Numbowls,cats_eats,mouse_eats;
 
-#define NumBowls  2              /* number of Bowls */
+#define NumBowls  2         /* number of Bowls */
 
 const int cat_wait=10;           //global constant declaration of waiting time of cat to eat 
 const int cat_eat=4;
@@ -33,31 +33,32 @@ typedef struct FoodBowl
 
 int NumCats,NumMice;
 
-static void Display(const char *name, pthread_t pet, const char *what,FoodBowl_t *FoodBowl, int my_FoodBowl)
+static const char *progname = "CAT AND MICE SYNCHRONIZATION PROBLEM";
+
+static void Display(const char *name,const char *what,FoodBowl_t *FoodBowl, int my_FoodBowl)
 {
     int i;
      printf("\n[");
     for (i = 0; i < NumBowls; i++) {
         if (i) 
 	     printf(":");
-	    
-        switch (FoodBowl->status[i]) // checking the bowls status  occupied/vaccant (0/1)
-	{
-          case none_eating:  printf("-");
-            		     break;
-       
-	  case cat_eating:   printf("cat");
-            		     break;
-        
-	  case mouse_eating: printf("mice");
-           		     break;
+        switch (FoodBowl->status[i]) {
+        case none_eating:
+            printf("-");
+            break;
+        case cat_eating:
+            printf("cat");
+            break;
+        case mouse_eating:
+            printf("mice");
+            break;
         }
     }
-    printf("]  %s (id %x) %s eating from FoodBowl %d\n", name, pet, what, my_FoodBowl);
+    printf("]  %s %s eating from FoodBowl %d\n", name, what, my_FoodBowl);
 }
 
 /*
-   According to Problem
+   According to question 
    Cats wait for a Bowl to become free and when coming to the Bowl,
    they wait for the mice to run away from the Bowl (they are nice
    cats and want to eat FoodBowl from Bowl rather than mice). Eating is simulated
@@ -94,9 +95,9 @@ static void*cat(void *arg)
         for (i = 0; i < NumBowls && FoodBowl->status[i] != none_eating; i++) ;
          my_FoodBowl = i;
         
-	assert(FoodBowl->status[my_FoodBowl] == none_eating);
+		assert(FoodBowl->status[my_FoodBowl] == none_eating);
         FoodBowl->status[my_FoodBowl] = cat_eating;
-        Display("cat", pthread_self(), "started", FoodBowl, my_FoodBowl);
+        Display("cat", "started", FoodBowl, my_FoodBowl);
         pthread_mutex_unlock(&FoodBowl->mutex);
 
         sleep(cat_eat);
@@ -110,7 +111,7 @@ static void*cat(void *arg)
 
       
         pthread_cond_broadcast(&FoodBowl->free_cv);
-        Display("cat", pthread_self(), "finished", FoodBowl, my_FoodBowl);
+        Display("cat","finished", FoodBowl, my_FoodBowl);
         pthread_mutex_unlock(&FoodBowl->mutex);
 
         sleep(rand() % cat_wait);
@@ -120,20 +121,17 @@ static void*cat(void *arg)
 }
 
 /*
-   According to Problem:
-   Mice wait for a FoodBowl to become free and cats go away. While eating,
-   they have to check that no cat is coming. 
+ * Mice wait for a FoodBowl to become free and cats go away. While eating,
+ * they have to check that no cat is coming. Hence, a simple sleep()
+ * cannot be used.
  */
 
 static void*mouse(void *arg)
 {
     FoodBowl_t *FoodBowl = (FoodBowl_t *) arg;
     int n = mouse_eats;
-   
-    
-    struct timespec ts;
-    struct timeval tp;
-
+    struct timespec t1;
+    struct timeval t2;
     int my_FoodBowl;
     int i;
 
@@ -146,7 +144,7 @@ static void*mouse(void *arg)
             pthread_cond_wait(&FoodBowl->free_cv, &FoodBowl->mutex);
          }
 
-        assert(FoodBowl->free_Bowls > 0); //if FoodBowl->free_Bowls is not greater than 0 the program will show error and terminate show to avoid it .
+        assert(FoodBowl->free_Bowls > 0);
         FoodBowl->free_Bowls--;
         assert(FoodBowl->cats_eating == 0);
         assert(FoodBowl->mice_eating < NumMice);
@@ -158,16 +156,16 @@ static void*mouse(void *arg)
         assert(FoodBowl->status[my_FoodBowl] == none_eating);
         FoodBowl->status[my_FoodBowl] = mouse_eating;
         
-		Display("mouse", pthread_self(), "started", FoodBowl, my_FoodBowl);
+		Display("mouse","started", FoodBowl, my_FoodBowl);
         
 		pthread_mutex_unlock(&FoodBowl->mutex);
         
-     	   gettimeofday(&tp,NULL);
-        ts.tv_sec  = tp.tv_sec;
-        ts.tv_nsec = tp.tv_usec * 1000;
-        ts.tv_sec += mouse_eat;   // how much time will mice have to wait for cat to go away from Foodbowl
+     
+        t1.tv_sec  = t2.tv_sec;
+        t1.tv_nsec = t2.tv_usec * 1000;
+        t1.tv_sec += mouse_eat;
         pthread_mutex_lock(&FoodBowl->mutex);
-        pthread_cond_timedwait(&FoodBowl->cat_cv, &FoodBowl->mutex, &ts);
+        pthread_cond_timedwait(&FoodBowl->cat_cv, &FoodBowl->mutex, &t1);
         pthread_mutex_unlock(&FoodBowl->mutex);
         
         pthread_mutex_lock(&FoodBowl->mutex);
@@ -180,7 +178,7 @@ static void*mouse(void *arg)
 
         
         pthread_cond_broadcast(&FoodBowl->free_cv);
-        Display("mouse", pthread_self(), "finished", FoodBowl, my_FoodBowl);
+        Display("mouse","finished", FoodBowl, my_FoodBowl);
         pthread_mutex_unlock(&FoodBowl->mutex);
         
         /* sleep to avoid Starvation */
@@ -202,10 +200,10 @@ int main(int argc, char *argv[])
 	printf("Enter the number of Mice: ");
 	scanf("%d",&NumMice);
 
-	printf("How many times a cat wants to eat: ");
+	printf(" how many times a cat wants to eat: ");
 	scanf("%d",&cats_eats);
 
-	printf("How many times a mice wants to eat: ");
+	printf(" how many times a mice wants to eat: ");
 	scanf("%d",&mouse_eats);
 
 
