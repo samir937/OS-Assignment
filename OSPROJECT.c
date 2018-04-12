@@ -146,7 +146,7 @@ static void*mouse(void *arg)
             pthread_cond_wait(&FoodBowl->free_cv, &FoodBowl->mutex);
          }
 
-        assert(FoodBowl->free_Bowls > 0);
+        assert(FoodBowl->free_Bowls > 0); //if FoodBowl->free_Bowls is not greater than 0 the program will show error and terminate show to avoid it .
         FoodBowl->free_Bowls--;
         assert(FoodBowl->cats_eating == 0);
         assert(FoodBowl->mice_eating < NumMice);
@@ -165,7 +165,7 @@ static void*mouse(void *arg)
      	   gettimeofday(&tp,NULL);
         ts.tv_sec  = tp.tv_sec;
         ts.tv_nsec = tp.tv_usec * 1000;
-        ts.tv_sec += mouse_eat;
+        ts.tv_sec += mouse_eat;   // how much time will mice have to wait for cat to go away from Foodbowl
         pthread_mutex_lock(&FoodBowl->mutex);
         pthread_cond_timedwait(&FoodBowl->cat_cv, &FoodBowl->mutex, &ts);
         pthread_mutex_unlock(&FoodBowl->mutex);
